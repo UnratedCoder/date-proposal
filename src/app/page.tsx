@@ -11,7 +11,6 @@ import EnvelopeOverlay from "@/components/vfx/EnvelopeOverlay";
 // UI components
 import MusicPlayer from "@/components/ui/MusicPlayer";
 import StepTransition from "@/components/ui/StepTransition";
-import AboutModal from "@/components/ui/AboutModal";
 
 // Step components
 import MemoryLaneStep from "@/components/steps/MemoryLaneStep";
@@ -101,11 +100,6 @@ export default function Home() {
       {/* 4. Floating Vinyl Music Player */}
       {hasOpenedEnvelope && (
         <MusicPlayer isPlaying={musicPlaying} setIsPlaying={setMusicPlaying} />
-      )}
-
-      {/* Symmetrical Floating Info Button */}
-      {hasOpenedEnvelope && (
-        <AboutModal />
       )}
 
       {/* Left Side Romantic Collage (Desktop only) */}
