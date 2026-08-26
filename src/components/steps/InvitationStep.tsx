@@ -66,15 +66,20 @@ export default function InvitationStep({ date, time, food }: InvitationStepProps
   const getGoogleCalendarUrl = () => {
     const title = encodeURIComponent("Our Special Date ❤️");
     
-    // Parse Date (e.g. "Saturday, June 20")
-    // Default to June 20, 2026.
-    let dateStr = "20260620";
-    if (date.includes("June")) {
-      const match = date.match(/June\s+(\d+)/);
-      if (match) {
-        const day = parseInt(match[1]);
-        dateStr = `202606${day < 10 ? "0" + day : day}`;
-      }
+    // Parse Date dynamically
+    let dateStr = "";
+    const parsedDate = new Date(date);
+    if (!isNaN(parsedDate.getTime())) {
+      const y = parsedDate.getFullYear();
+      const m = String(parsedDate.getMonth() + 1).padStart(2, "0");
+      const d = String(parsedDate.getDate()).padStart(2, "0");
+      dateStr = `${y}${m}${d}`;
+    } else {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      dateStr = `${y}${m}${d}`;
     }
 
     // Parse Time (e.g. "Evening (7:00 PM)", "Night (8:30 PM)", "Late Night (10:00 PM)")

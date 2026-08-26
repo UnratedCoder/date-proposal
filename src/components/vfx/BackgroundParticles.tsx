@@ -25,7 +25,7 @@ export default function BackgroundParticles() {
     if (!ctx) return;
 
     let animationFrameId: number;
-    let particles: Particle[] = [];
+    const particles: Particle[] = [];
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;

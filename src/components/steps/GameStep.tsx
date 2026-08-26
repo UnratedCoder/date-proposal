@@ -13,7 +13,6 @@ export default function GameStep({ onNext }: GameStepProps) {
   const [isScratching, setIsScratching] = useState(false);
   const [scratchPercentage, setScratchPercentage] = useState(0);
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [isCanvasFading, setIsCanvasFading] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -192,7 +191,6 @@ export default function GameStep({ onNext }: GameStepProps) {
 
   const unlockMessage = () => {
     setIsUnlocked(true);
-    setIsCanvasFading(true);
     
     // Confetti celebration
     confetti({

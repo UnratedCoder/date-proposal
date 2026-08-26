@@ -27,7 +27,7 @@ export default function CursorTrail() {
     if (!ctx) return;
 
     let animationFrameId: number;
-    let sparkles: Sparkle[] = [];
+    const sparkles: Sparkle[] = [];
 
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;

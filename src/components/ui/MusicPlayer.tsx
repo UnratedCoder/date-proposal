@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
-import { Music, Volume2, VolumeX, Play, Pause, SkipForward } from "lucide-react";
+import { Volume2, VolumeX, Play, Pause, SkipForward } from "lucide-react";
 
 interface Track {
   name: string;
@@ -33,27 +33,25 @@ export default function MusicPlayer({ isPlaying, setIsPlaying }: MusicPlayerProp
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const currentTrack = playlist[trackIndex];
+  const { url, startTime } = currentTrack;
 
-  // Initialize and play Audio
+  // Initialize Audio instance on track change
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.pause();
     }
 
-    const audio = new Audio(currentTrack.url);
+    const audio = new Audio(url);
     audio.loop = true;
     audio.volume = 0.5;
-    audio.muted = isMuted;
 
     // Set starting time once metadata is loaded
     const handleLoadedMetadata = () => {
-      if (currentTrack.startTime && audio.currentTime < currentTrack.startTime) {
-        audio.currentTime = currentTrack.startTime;
+      if (startTime && audio.currentTime < startTime) {
+        audio.currentTime = startTime;
       }
     };
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
-
-    audioRef.current = audio;
 
     const handleError = (e: ErrorEvent) => {
       console.warn("Audio loading failed. Fallback or handle gracefully.", e);
@@ -61,11 +59,7 @@ export default function MusicPlayer({ isPlaying, setIsPlaying }: MusicPlayerProp
     };
     audio.addEventListener("error", handleError);
 
-    if (isPlaying) {
-      audio.play().catch((err) => {
-        console.warn("Playback failed automatically. Needs user interaction.", err);
-      });
-    }
+    audioRef.current = audio;
 
     return () => {
       audio.pause();
@@ -73,20 +67,28 @@ export default function MusicPlayer({ isPlaying, setIsPlaying }: MusicPlayerProp
       audio.removeEventListener("error", handleError);
       audioRef.current = null;
     };
-  }, [trackIndex]);
+  }, [url, startTime]);
 
   // Synchronize playing state with prop
   useEffect(() => {
-    if (!audioRef.current) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
     if (isPlaying) {
-      audioRef.current.play().catch(() => {
-        // Handle playback blocks
+      audio.play().catch((err) => {
+        console.warn("Playback failed automatically. Needs user interaction.", err);
       });
     } else {
-      audioRef.current.pause();
+      audio.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, url]);
+
+  // Synchronize mute state
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted;
+    }
+  }, [isMuted, url]);
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();

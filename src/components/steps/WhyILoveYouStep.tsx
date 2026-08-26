@@ -49,14 +49,11 @@ export default function WhyILoveYouStep({ onNext }: WhyILoveYouStepProps) {
   const [timerProgress, setTimerProgress] = useState(0);
 
   React.useEffect(() => {
-    // If this card is already read, set progress to 100
     if (viewedIndices.includes(currentIndex)) {
-      setTimerProgress(100);
       return;
     }
 
-    setTimerProgress(0);
-    const duration = 9000; // 3 seconds per card
+    const duration = 9000; // time per card
     const intervalTime = 50;
     const totalSteps = duration / intervalTime;
     let currentStep = 0;
@@ -75,7 +72,10 @@ export default function WhyILoveYouStep({ onNext }: WhyILoveYouStepProps) {
       }
     }, intervalTime);
 
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      setTimerProgress(0);
+    };
   }, [currentIndex, viewedIndices]);
 
   const hasViewedAll = viewedIndices.length === reasons.length;

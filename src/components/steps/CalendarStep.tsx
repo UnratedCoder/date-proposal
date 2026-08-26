@@ -2,35 +2,74 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar as CalendarIcon, Heart, ArrowRight } from "lucide-react";
+import { Calendar as CalendarIcon, Heart, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CalendarStepProps {
   onSelectDate: (date: string) => void;
 }
 
 export default function CalendarStep({ onSelectDate }: CalendarStepProps) {
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const today = new Date();
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // June 2026 starts on a Monday (June 1, 2026)
-  // Total days in June: 30
-  const daysInJune = Array.from({ length: 30 }, (_, i) => i + 1);
   const weekDays = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
+  // Number of days in current month
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  // Day of week of first day (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+  const firstDayRaw = new Date(currentYear, currentMonth, 1).getDay();
+  // Convert so Monday = 0, Tuesday = 1, ..., Sunday = 6
+  const startOffset = firstDayRaw === 0 ? 6 : firstDayRaw - 1;
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const handlePrevMonth = () => {
+    // Prevent navigating before current month
+    if (currentYear === today.getFullYear() && currentMonth <= today.getMonth()) {
+      return;
+    }
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear((prev) => prev - 1);
+    } else {
+      setCurrentMonth((prev) => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear((prev) => prev + 1);
+    } else {
+      setCurrentMonth((prev) => prev + 1);
+    }
+  };
+
+  const canGoPrev = !(currentYear === today.getFullYear() && currentMonth <= today.getMonth());
+
   const handleDaySelect = (day: number) => {
-    setSelectedDay(day);
+    const targetDate = new Date(currentYear, currentMonth, day);
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (targetDate < startOfToday) return;
+
+    setSelectedDate(targetDate);
   };
 
   const handleNext = () => {
-    if (selectedDay) {
-      // Format as "Saturday, June 20" or similar
-      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      // June 1, 2026 is Monday, so day d is (d - 1) days after Monday.
-      // Day of week index = (1 + d - 1) % 7 = d % 7.
-      // Monday = 1, Tuesday = 2, ..., Saturday = 6, Sunday = 0.
-      const dayOfWeekIndex = selectedDay % 7;
-      const dayOfWeekName = dayNames[dayOfWeekIndex === 0 ? 0 : dayOfWeekIndex];
-      
-      onSelectDate(`${dayOfWeekName}, June ${selectedDay}`);
+    if (selectedDate) {
+      const formattedDate = selectedDate.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      });
+      onSelectDate(formattedDate);
     }
   };
 
@@ -54,9 +93,30 @@ export default function CalendarStep({ onSelectDate }: CalendarStepProps) {
         Pick a date
       </p>
 
-      {/* Month Display */}
-      <div className="w-full flex justify-between items-center px-2 mb-2">
-        <span className="font-serif text-base text-white font-semibold">June 2026</span>
+      {/* Month Display & Navigation */}
+      <div className="w-full flex justify-between items-center px-1 mb-2">
+        <button
+          onClick={handlePrevMonth}
+          disabled={!canGoPrev}
+          className={`p-1.5 rounded-full text-slate-300 transition-colors ${
+            canGoPrev ? "hover:bg-love-500/20 hover:text-white cursor-pointer" : "opacity-20 cursor-not-allowed"
+          }`}
+          aria-label="Previous month"
+        >
+          <ChevronLeft size={18} />
+        </button>
+
+        <span className="font-serif text-base text-white font-semibold">
+          {monthNames[currentMonth]} {currentYear}
+        </span>
+
+        <button
+          onClick={handleNextMonth}
+          className="p-1.5 rounded-full text-slate-300 hover:bg-love-500/20 hover:text-white transition-colors cursor-pointer"
+          aria-label="Next month"
+        >
+          <ChevronRight size={18} />
+        </button>
       </div>
 
       {/* Calendar Grid */}
@@ -68,31 +128,47 @@ export default function CalendarStep({ onSelectDate }: CalendarStepProps) {
           </div>
         ))}
 
+        {/* Blank Padding Days */}
+        {Array.from({ length: startOffset }).map((_, i) => (
+          <div key={`blank-${i}`} className="h-9 w-9" />
+        ))}
+
         {/* Days of Month */}
-        {daysInJune.map((day) => {
-          const isSelected = selectedDay === day;
-          
-          // Check if current date is June 2026, otherwise default to June 20, 2026
-          const todayDate = new Date();
-          const isCurrentJune2026 = todayDate.getMonth() === 5 && todayDate.getFullYear() === 2026;
-          const isToday = isCurrentJune2026 ? todayDate.getDate() === day : day === 20;
+        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
+          const isSelected =
+            selectedDate !== null &&
+            selectedDate.getDate() === day &&
+            selectedDate.getMonth() === currentMonth &&
+            selectedDate.getFullYear() === currentYear;
+
+          const isToday =
+            today.getDate() === day &&
+            today.getMonth() === currentMonth &&
+            today.getFullYear() === currentYear;
+
+          const targetDate = new Date(currentYear, currentMonth, day);
+          const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          const isPast = targetDate < startOfToday;
 
           return (
             <motion.button
               key={day}
+              disabled={isPast}
               onClick={() => handleDaySelect(day)}
-              whileHover={{ scale: 1.15 }}
-              whileTap={{ scale: 0.95 }}
-              className={`relative h-9 w-9 flex items-center justify-center text-xs font-medium rounded-full transition-colors cursor-pointer ${
-                isSelected
-                  ? "bg-love-500 text-white font-bold shadow-md shadow-love-500/30"
+              whileHover={!isPast ? { scale: 1.15 } : {}}
+              whileTap={!isPast ? { scale: 0.95 } : {}}
+              className={`relative h-9 w-9 flex items-center justify-center text-xs font-medium rounded-full transition-colors ${
+                isPast
+                  ? "text-slate-600 opacity-30 cursor-not-allowed"
+                  : isSelected
+                  ? "bg-love-500 text-white font-bold shadow-md shadow-love-500/30 cursor-pointer"
                   : isToday
-                  ? "border border-dashed border-love-400 bg-love-500/10 text-love-200 font-bold"
-                  : "hover:bg-love-500/20 text-slate-200"
+                  ? "border border-dashed border-love-400 bg-love-500/10 text-love-200 font-bold cursor-pointer hover:bg-love-500/20"
+                  : "hover:bg-love-500/20 text-slate-200 cursor-pointer"
               }`}
             >
               {day}
-              
+
               {/* Highlight today's date with a subtle glow indicator */}
               {isToday && !isSelected && (
                 <span className="absolute bottom-1 w-1 h-1 bg-love-400 rounded-full animate-ping" />
@@ -117,7 +193,7 @@ export default function CalendarStep({ onSelectDate }: CalendarStepProps) {
 
       {/* Next Button */}
       <AnimatePresence>
-        {selectedDay && (
+        {selectedDate && (
           <motion.button
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
